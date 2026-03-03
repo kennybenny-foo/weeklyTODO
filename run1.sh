@@ -5,16 +5,19 @@ APP_DIR="$HOME/weeklyTODO"
 APP_FILE="weeklyTODO.py"
 VENV="$APP_DIR/.venv"
 PY="$VENV/bin/python"
-LOG="$APP_DIR/log.txt"
+
+LOG_DIR="$HOME/weeklyTODO_logs"
+mkdir -p "$LOG_DIR"
+LOG="$LOG_DIR/log.txt"
 
 cd "$APP_DIR"
 
 echo "==> Syncing code to origin/main..."
 git fetch origin
 git reset --hard origin/main
-git clean -fd   # IMPORTANT: removes leftover untracked files
+git clean -fd
 
-echo "DEPLOYED COMMIT:"
+echo "==> DEPLOYED COMMIT:"
 git log -1 --oneline
 
 echo "==> Ensuring venv exists..."
@@ -28,20 +31,15 @@ if [ -f requirements.txt ]; then
   "$PY" -m pip install -r requirements.txt
 fi
 
-echo "==> Stopping old server (by port and by script name)..."
-# Kill whatever is holding port 5050 (most reliable)
-if command -v lsof >/dev/null 2>&1; then
-  sudo lsof -t -i:5050 | xargs -r sudo kill -9
-else
-  pkill -f "weeklyTODO.py" || true
-fi
+echo "==> Stopping old server..."
+pkill -f "weeklyTODO.py" || true
 
 echo "==> Starting new server..."
-nohup "$PY" "$APP_FILE" > "$LOG" 2>&1 & disown || true
+nohup "$PY" "$APP_FILE" >> "$LOG" 2>&1 & disown || true
 
 sleep 1
 echo "==> Running processes:"
-pgrep -af "weeklyTODO.py" || true
+pgrep -af "weeklyTODO.py" || (echo "FAILED to start"; tail -n 80 "$LOG"; exit 1)
 
 echo "==> Last 40 log lines:"
 tail -n 40 "$LOG" || true
