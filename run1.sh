@@ -14,6 +14,9 @@ git fetch origin
 git reset --hard origin/main
 git clean -fd   # IMPORTANT: removes leftover untracked files
 
+echo "DEPLOYED COMMIT:"
+git log -1 --oneline
+
 echo "==> Ensuring venv exists..."
 if [ ! -d "$VENV" ]; then
   python3.12 -m venv "$VENV"
