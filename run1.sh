@@ -7,9 +7,9 @@ LOG_FILE="log.txt"
 
 cd "$APP_DIR"
 
-echo "==> Updating code..."
-git fetch --all
-git pull --rebase
+LOG_DIR="$HOME/weeklyTODO_logs"
+mkdir -p "$LOG_DIR"
+nohup python3 weeklyTODO.py >> "$LOG_DIR/log.txt" 2>&1 &
 
 echo "==> Installing deps if requirements.txt exists..."
 if [ -f requirements.txt ]; then
