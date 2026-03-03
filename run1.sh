@@ -3,28 +3,44 @@ set -euo pipefail
 
 APP_DIR="$HOME/weeklyTODO"
 APP_FILE="weeklyTODO.py"
-PY="$APP_DIR/.venv/bin/python"
+VENV="$APP_DIR/.venv"
+PY="$VENV/bin/python"
+LOG="$APP_DIR/log.txt"
 
 cd "$APP_DIR"
 
-# Pull latest code (rebase is risky in automation; use a clean sync)
-git fetch --all
+echo "==> Syncing code to origin/main..."
+git fetch origin
 git reset --hard origin/main
+git clean -fd   # IMPORTANT: removes leftover untracked files
 
-# Ensure venv exists
-if [ ! -d ".venv" ]; then
-  python3.12 -m venv .venv
+echo "==> Ensuring venv exists..."
+if [ ! -d "$VENV" ]; then
+  python3.12 -m venv "$VENV"
 fi
 
-# Install/update deps
+echo "==> Installing deps..."
 "$PY" -m pip install -U pip
-"$PY" -m pip install -r requirements.txt
+if [ -f requirements.txt ]; then
+  "$PY" -m pip install -r requirements.txt
+fi
 
-# Stop previous process (if any) by matching the exact command
-# This avoids killing unrelated python processes.
-pkill -f "$PY $APP_FILE" || true
+echo "==> Stopping old server (by port and by script name)..."
+# Kill whatever is holding port 5050 (most reliable)
+if command -v lsof >/dev/null 2>&1; then
+  sudo lsof -t -i:5050 | xargs -r sudo kill -9
+else
+  pkill -f "weeklyTODO.py" || true
+fi
 
-# Start new process
-nohup "$PY" "$APP_FILE" > log.txt 2>&1 &
+echo "==> Starting new server..."
+nohup "$PY" "$APP_FILE" > "$LOG" 2>&1 & disown || true
 
-echo "Started. Tail logs with: tail -n 200 -f $APP_DIR/log.txt"
+sleep 1
+echo "==> Running processes:"
+pgrep -af "weeklyTODO.py" || true
+
+echo "==> Last 40 log lines:"
+tail -n 40 "$LOG" || true
+
+echo "==> Done. Tail logs with: tail -n 200 -f $LOG"
