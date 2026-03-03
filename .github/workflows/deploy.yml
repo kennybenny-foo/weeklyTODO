@@ -25,4 +25,4 @@ jobs:
             set -e
             cd ~/weeklyTODO
             bash run1.sh
-            tail -n 50 ~/weeklyTODO/log.txt
+            tail -n 50 ~/weeklyTODO_logs/log.txt
