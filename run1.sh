@@ -15,7 +15,7 @@ cd "$APP_DIR"
 echo "==> Syncing code to origin/main..."
 git fetch origin
 git reset --hard origin/main
-git clean -fd
+git clean -fd -e .venv -e weeklyTODO_logs -e log.txt
 
 echo "==> DEPLOYED COMMIT:"
 git log -1 --oneline
